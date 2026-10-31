@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { BookOpen, Check, Compass, FlaskConical, Rocket } from 'lucide-react';
+import { BookOpen, Check, Compass, FlaskConical, Info, Rocket } from 'lucide-react';
 
 import GuideTour from './GuideTour';
 import Popover from './Popover';
@@ -13,8 +13,8 @@ const actionGuides = GUIDES.filter((guide) => guide.type === 'action');
 const generalGuide = GUIDES.find((guide) => guide.type === 'general');
 
 // Botón "?" de la barra: qué se puede hacer en la app. Conocer la pantalla, guías de acción,
-// recorrido general y el CV de ejemplo.
-const GuideButton = ({ onShowPane, isSample, onLoadSample, onClearSample }) => {
+// recorrido general, el CV de ejemplo y la bienvenida.
+const GuideButton = ({ onShowPane, isSample, onLoadSample, onClearSample, onShowWelcome }) => {
     const [activeGuide, setActiveGuide] = useState(null);
     const [viewed, setViewed] = useState(loadViewedGuides);
 
@@ -66,6 +66,14 @@ const GuideButton = ({ onShowPane, isSample, onLoadSample, onClearSample }) => {
                         >
                             <FlaskConical size={14} />
                             <span>{isSample ? 'Quitar el CV de ejemplo' : 'Probar con el CV de ejemplo'}</span>
+                        </button>
+                        <button
+                            type="button"
+                            className="guide-menu-item"
+                            onClick={() => { close(); onShowWelcome(); }}
+                        >
+                            <Info size={14} />
+                            <span>Ver la bienvenida</span>
                         </button>
                     </div>
                 )}

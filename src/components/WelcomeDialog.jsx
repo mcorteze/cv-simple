@@ -1,10 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
-import { loadWelcomeSeen, saveWelcomeSeen } from '../utils/storage';
-
-// Mensaje de la primera visita. Se muestra una sola vez por navegador.
-const WelcomeDialog = () => {
-    const [open, setOpen] = useState(() => !loadWelcomeSeen());
+// Mensaje de la primera visita. Después se abre desde el menú de ayuda.
+const WelcomeDialog = ({ open, onClose }) => {
     const dialogRef = useRef(null);
 
     useEffect(() => {
@@ -13,16 +10,11 @@ const WelcomeDialog = () => {
         if (!open && dialog.open) dialog.close();
     }, [open]);
 
-    const close = () => {
-        saveWelcomeSeen();
-        setOpen(false);
-    };
-
     return (
         <dialog
             ref={dialogRef}
             className="confirm-dialog welcome-dialog"
-            onCancel={(e) => { e.preventDefault(); close(); }}
+            onCancel={(e) => { e.preventDefault(); onClose(); }}
         >
             <h2>Hola, te doy la bienvenida</h2>
             <p>Este editor de CV es un recurso hecho para colegas y es completamente gratuito.</p>
@@ -36,7 +28,7 @@ const WelcomeDialog = () => {
                 tal como hice yo.
             </p>
             <div className="confirm-actions">
-                <button type="button" className="btn btn-primary" onClick={close}>Comenzar</button>
+                <button type="button" className="btn btn-primary" onClick={onClose}>Comenzar</button>
             </div>
         </dialog>
     );

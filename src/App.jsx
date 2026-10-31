@@ -37,7 +37,7 @@ import {
 } from './utils/cvFormat';
 import { computePageBreaks } from './utils/pagination';
 import { reviewCV } from './utils/reviewCV';
-import { loadDraft, saveDraft } from './utils/storage';
+import { loadDraft, loadWelcomeSeen, saveDraft, saveWelcomeSeen } from './utils/storage';
 import { decodeTextFile, markdownToPlainText } from './utils/textUtils';
 
 const A4_WIDTH_PX = 794;
@@ -91,6 +91,7 @@ function App() {
     const [pendingReplace, setPendingReplace] = useState(null);
     const [notice, setNotice] = useState('');
     const [isCopied, setIsCopied] = useState(false);
+    const [isWelcomeOpen, setIsWelcomeOpen] = useState(() => !loadWelcomeSeen());
 
     const isMobile = useIsMobile();
 
@@ -266,7 +267,7 @@ function App() {
     );
 
     const previewPane = (
-        <div className="pane">
+        <div className="pane pane-preview">
             <div className="pane-header">
                 <div className="preview-summary" data-guide="review">
                     <span>Vista previa · {pageCount} {pageCount === 1 ? 'página' : 'páginas'}</span>
@@ -360,6 +361,7 @@ function App() {
             isSample={markdown === SAMPLE_CV}
             onLoadSample={() => replaceMarkdown(SAMPLE_CV)}
             onClearSample={() => replaceMarkdown('')}
+            onShowWelcome={() => setIsWelcomeOpen(true)}
         />
     );
 
@@ -369,7 +371,13 @@ function App() {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}>
 
-            <WelcomeDialog />
+            <WelcomeDialog
+                open={isWelcomeOpen}
+                onClose={() => {
+                    saveWelcomeSeen();
+                    setIsWelcomeOpen(false);
+                }}
+            />
 
             <ConfirmDialog
                 open={pendingReplace !== null}
