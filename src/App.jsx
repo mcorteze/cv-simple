@@ -1,0 +1,469 @@
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useReactToPrint } from 'react-to-print';
+import {
+    Check,
+    ClipboardCheck,
+    Copy,
+    Download,
+    FilePlus,
+    FileText,
+    Upload,
+    FileDown,
+    AlertTriangle,
+    X,
+    ZoomIn,
+    ZoomOut,
+    Maximize
+} from 'lucide-react';
+
+import ConfirmDialog from './components/ConfirmDialog';
+import CVPreview from './components/CVPreview';
+import EditorToolbar, { toggleBold } from './components/EditorToolbar';
+import Popover from './components/Popover';
+import { SAMPLE_CV } from './data/sampleCV';
+import { getCvFileName, downloadTxtFile } from './utils/exportUtils';
+import {
+    TEMPLATES,
+    FONT_SIZES,
+    MARGINS,
+    SPACINGS,
+    getMargin,
+    getPageVars,
+    getPrintPageStyle,
+    normalizeFormat
+} from './utils/cvFormat';
+import { computePageBreaks } from './utils/pagination';
+import { reviewCV } from './utils/reviewCV';
+import { loadDraft, saveDraft } from './utils/storage';
+import { decodeTextFile, markdownToPlainText } from './utils/textUtils';
+
+const A4_WIDTH_PX = 794;
+const MOBILE_QUERY = '(max-width: 767px)';
+const MIN_EDITOR_WIDTH = 20;
+const MAX_EDITOR_WIDTH = 80;
+const COPIED_FEEDBACK_MS = 2000;
+
+const EDITOR_PLACEHOLDER = `# Tu nombre
+correo | teléfono | ciudad
+
+## EXPERIENCIA
+
+### Cargo | 2020 - Presente
+**Empresa / Ciudad**
+- Una tarea o logro
+
+Empieza a escribir aquí o usa los botones de arriba.`;
+
+const FORMAT_CONTROLS = [
+    { key: 'template', label: 'Diseño', options: TEMPLATES },
+    { key: 'fontSize', label: 'Letra', options: FONT_SIZES },
+    { key: 'margin', label: 'Márgenes', options: MARGINS },
+    { key: 'spacing', label: 'Espaciado', options: SPACINGS },
+];
+
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches);
+
+    useEffect(() => {
+        const query = window.matchMedia(MOBILE_QUERY);
+        const handleChange = (e) => setIsMobile(e.matches);
+        query.addEventListener('change', handleChange);
+        return () => query.removeEventListener('change', handleChange);
+    }, []);
+
+    return isMobile;
+};
+
+function App() {
+    const [markdown, setMarkdown] = useState(() => loadDraft()?.markdown ?? SAMPLE_CV);
+    const [format, setFormat] = useState(() => normalizeFormat(loadDraft()?.format));
+    const [isSaved, setIsSaved] = useState(true);
+    const [scale, setScale] = useState(1);
+    const [isDragging, setIsDragging] = useState(false);
+    const [pageHeight, setPageHeight] = useState(0);
+    const [pageBreaks, setPageBreaks] = useState([]);
+    const [mobileTab, setMobileTab] = useState('editor');
+    const [editorWidth, setEditorWidth] = useState(45);
+    const [pendingReplace, setPendingReplace] = useState(null);
+    const [notice, setNotice] = useState('');
+    const [isCopied, setIsCopied] = useState(false);
+
+    const isMobile = useIsMobile();
+
+    const fileInputRef = useRef(null);
+    const textareaRef = useRef(null);
+    const componentRef = useRef();
+    const previewScrollRef = useRef();
+    const mainRef = useRef(null);
+    const manualZoomRef = useRef(false);
+
+    useEffect(() => {
+        // El ejemplo no se guarda: así la app siempre muestra su versión actual
+        setIsSaved(saveDraft({ markdown: markdown === SAMPLE_CV ? null : markdown, format }));
+    }, [markdown, format]);
+
+    const autoScale = () => {
+        const container = previewScrollRef.current;
+        if (!container?.clientWidth) return;
+
+        const styles = getComputedStyle(container);
+        const padding = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+        setScale(Math.min(1, (container.clientWidth - padding) / A4_WIDTH_PX));
+    };
+
+    useLayoutEffect(() => {
+        const fitUnlessZoomed = () => {
+            if (!manualZoomRef.current) autoScale();
+        };
+
+        fitUnlessZoomed();
+        const observer = new ResizeObserver(fitUnlessZoomed);
+        if (previewScrollRef.current) observer.observe(previewScrollRef.current);
+        return () => observer.disconnect();
+    }, [isMobile]);
+
+    // Mide la hoja para mostrar dónde cortan las páginas
+    useLayoutEffect(() => {
+        const measure = () => {
+            const page = componentRef.current;
+            if (!page?.offsetHeight) return;
+            setPageHeight(page.offsetHeight);
+            setPageBreaks(computePageBreaks(page, getMargin(format).yMm));
+        };
+
+        measure();
+        document.fonts?.ready.then(measure);
+        const observer = new ResizeObserver(measure);
+        if (componentRef.current) observer.observe(componentRef.current);
+        return () => observer.disconnect();
+    }, [markdown, format, isMobile]);
+
+    const handlePrint = useReactToPrint({
+        content: () => componentRef.current,
+        documentTitle: getCvFileName(markdown),
+        pageStyle: getPrintPageStyle(format),
+    });
+
+    const pageCount = pageBreaks.length + 1;
+    const reviewIssues = useMemo(() => reviewCV(markdown, pageCount), [markdown, pageCount]);
+
+    const applyReplace = ({ text, message }) => {
+        setMarkdown(text);
+        setNotice(message);
+        setPendingReplace(null);
+    };
+
+    const replaceMarkdown = (text, message = '') => {
+        const hasOwnText = markdown.trim() && markdown !== SAMPLE_CV;
+        if (hasOwnText) setPendingReplace({ text, message });
+        else applyReplace({ text, message });
+    };
+
+    const importFile = async (file) => {
+        const name = file.name.toLowerCase();
+
+        try {
+            if (name.endsWith('.docx')) {
+                const { docxToMarkdown } = await import('./utils/importWord');
+                replaceMarkdown(
+                    await docxToMarkdown(await file.arrayBuffer()),
+                    'CV importado desde Word. Revisa los títulos, los cargos y las fechas, porque cada documento está armado de forma distinta.'
+                );
+            } else if (name.endsWith('.md') || name.endsWith('.txt')) {
+                replaceMarkdown(decodeTextFile(await file.arrayBuffer()));
+            } else {
+                setNotice('Formato no compatible. Usa un archivo .docx, .md o .txt. Un .doc antiguo debe guardarse primero como .docx desde Word.');
+            }
+        } catch (error) {
+            console.error("Error al importar el archivo:", error);
+            setNotice('No se pudo leer el archivo. Revisa que no esté dañado o protegido con contraseña.');
+        }
+    };
+
+    const handleFileUpload = (event) => {
+        const file = event.target.files[0];
+        if (file) importFile(file);
+        event.target.value = '';
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const file = e.dataTransfer.files[0];
+        if (file) importFile(file);
+    };
+
+    const handleDragLeave = (e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false);
+    };
+
+    const handleCopyText = async () => {
+        try {
+            await navigator.clipboard.writeText(markdownToPlainText(markdown));
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), COPIED_FEEDBACK_MS);
+        } catch {
+            setNotice('El navegador no permitió copiar el texto.');
+        }
+    };
+
+    const handleEditorKeyDown = (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+            e.preventDefault();
+            toggleBold(e.currentTarget);
+        }
+    };
+
+    const handleManualZoom = (e) => {
+        manualZoomRef.current = true;
+        setScale(Number(e.target.value));
+    };
+
+    const handleFitZoom = () => {
+        manualZoomRef.current = false;
+        autoScale();
+    };
+
+    const resizeEditor = (percent) => {
+        setEditorWidth(Math.min(MAX_EDITOR_WIDTH, Math.max(MIN_EDITOR_WIDTH, percent)));
+    };
+
+    const handleDividerMove = (e) => {
+        if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+        const rect = mainRef.current.getBoundingClientRect();
+        resizeEditor(((e.clientX - rect.left) / rect.width) * 100);
+    };
+
+    const handleDividerKeyDown = (e) => {
+        if (e.key === 'ArrowLeft') resizeEditor(editorWidth - 2);
+        if (e.key === 'ArrowRight') resizeEditor(editorWidth + 2);
+    };
+
+    const editorPane = (
+        <div className="pane">
+            <div className="pane-header">
+                <span>Editor</span>
+                <span className="save-status">
+                    {isSaved ? 'Guardado solo en este navegador' : 'No se pudo guardar en este navegador'}
+                </span>
+            </div>
+            <EditorToolbar textareaRef={textareaRef} />
+            <textarea
+                ref={textareaRef}
+                className="editor-container"
+                value={markdown}
+                onChange={(e) => setMarkdown(e.target.value)}
+                onKeyDown={handleEditorKeyDown}
+                placeholder={EDITOR_PLACEHOLDER}
+                spellCheck="true"
+                lang="es"
+            />
+        </div>
+    );
+
+    const previewPane = (
+        <div className="pane">
+            <div className="pane-header">
+                <div className="preview-summary">
+                    <span>Vista previa · {pageCount} {pageCount === 1 ? 'página' : 'páginas'}</span>
+                    <Popover
+                        trigger={reviewIssues.length === 0
+                            ? <><ClipboardCheck size={13} />Revisión: sin avisos</>
+                            : <><AlertTriangle size={13} />Revisión: {reviewIssues.length} {reviewIssues.length === 1 ? 'aviso' : 'avisos'}</>}
+                        triggerClassName="review-trigger"
+                        title="Revisión del CV"
+                    >
+                        {reviewIssues.length === 0 ? (
+                            <p className="review-ok">
+                                <Check size={14} />
+                                No se encontraron problemas básicos.
+                            </p>
+                        ) : (
+                            <ul className="review-list">
+                                {reviewIssues.map((issue) => <li key={issue}>{issue}</li>)}
+                            </ul>
+                        )}
+                    </Popover>
+                </div>
+                <div className="scale-controls">
+                    <ZoomOut size={14} />
+                    <input
+                        type="range"
+                        aria-label="Zoom"
+                        min={0.3}
+                        max={1.5}
+                        step={0.01}
+                        value={scale}
+                        onChange={handleManualZoom}
+                    />
+                    <ZoomIn size={14} />
+                    <button
+                        type="button"
+                        className="icon-button"
+                        title="Ajuste automático"
+                        aria-label="Ajuste automático"
+                        onClick={handleFitZoom}
+                    >
+                        <Maximize size={14} />
+                    </button>
+                </div>
+            </div>
+            <div className="format-bar">
+                {FORMAT_CONTROLS.map(({ key, label, options }) => (
+                    <label className="format-control" key={key}>
+                        <span>{label}</span>
+                        <select
+                            value={format[key]}
+                            onChange={(e) => {
+                                const { value } = e.target;
+                                setFormat((current) => ({ ...current, [key]: value }));
+                            }}
+                        >
+                            {options.map((option) => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                        </select>
+                    </label>
+                ))}
+            </div>
+            <div className="preview-pane" ref={previewScrollRef}>
+                <div
+                    className="cv-page-sizer"
+                    style={{ width: A4_WIDTH_PX * scale, height: pageHeight * scale }}
+                >
+                    <div className="cv-page-wrapper" style={{ transform: `scale(${scale})` }}>
+                        <CVPreview
+                            ref={componentRef}
+                            markdown={markdown}
+                            template={format.template}
+                            pageVars={getPageVars(format)}
+                        />
+                        {pageBreaks.map((top, index) => (
+                            <div className="page-break-marker" key={top} style={{ top }}>
+                                <span>Página {index + 2}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="app-container"
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}>
+
+            <ConfirmDialog
+                open={pendingReplace !== null}
+                title="¿Reemplazar el texto actual?"
+                message="Se perderá lo que escribiste. Si quieres conservarlo, descárgalo antes de continuar."
+                confirmLabel="Reemplazar"
+                onConfirm={() => applyReplace(pendingReplace)}
+                onCancel={() => setPendingReplace(null)}
+            />
+
+            {isDragging && (
+                <div className="drag-overlay">
+                    <div className="drag-message">
+                        <Upload size={64} strokeWidth={1.5} />
+                        <p>Suelta tu archivo aquí</p>
+                    </div>
+                </div>
+            )}
+
+            <header className="toolbar">
+                <div className="logo">
+                    <span>Markdown CV</span>
+                </div>
+                <div className="actions">
+                    <button className="btn btn-secondary" onClick={() => replaceMarkdown('')}>
+                        <FilePlus size={14} />
+                        Nuevo
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => replaceMarkdown(SAMPLE_CV)}>
+                        <FileText size={14} />
+                        Ejemplo
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => fileInputRef.current.click()}>
+                        <Upload size={14} />
+                        Importar
+                    </button>
+                    <input type="file" ref={fileInputRef} hidden accept=".docx,.md,.txt" onChange={handleFileUpload} />
+
+                    <button className="btn btn-secondary" onClick={handleCopyText}>
+                        {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                        {isCopied ? 'Copiado' : 'Copiar texto'}
+                    </button>
+
+                    <button className="btn btn-secondary" onClick={() => downloadTxtFile(markdown)}>
+                        <Download size={14} />
+                        Descargar .txt
+                    </button>
+
+                    <button className="btn btn-primary" onClick={handlePrint}>
+                        <FileDown size={14} />
+                        Exportar PDF
+                    </button>
+                </div>
+            </header>
+
+            {notice && (
+                <div className="app-notice" role="status">
+                    <span>{notice}</span>
+                    <button type="button" className="icon-button" aria-label="Cerrar aviso" onClick={() => setNotice('')}>
+                        <X size={14} />
+                    </button>
+                </div>
+            )}
+
+            {isMobile ? (
+                <main className="main-content mobile-content">
+                    <div className="mobile-tabs">
+                        <button
+                            type="button"
+                            className={mobileTab === 'editor' ? 'is-active' : ''}
+                            onClick={() => setMobileTab('editor')}
+                        >
+                            Editor
+                        </button>
+                        <button
+                            type="button"
+                            className={mobileTab === 'preview' ? 'is-active' : ''}
+                            onClick={() => setMobileTab('preview')}
+                        >
+                            Vista previa
+                        </button>
+                    </div>
+                    <div className="mobile-pane" hidden={mobileTab !== 'editor'}>{editorPane}</div>
+                    <div className="mobile-pane" hidden={mobileTab !== 'preview'}>{previewPane}</div>
+                </main>
+            ) : (
+                <main className="main-content" ref={mainRef}>
+                    <div className="split-panel" style={{ width: `${editorWidth}%` }}>
+                        {editorPane}
+                    </div>
+                    <div
+                        className="split-divider"
+                        role="separator"
+                        aria-orientation="vertical"
+                        aria-label="Cambiar ancho del editor"
+                        aria-valuenow={Math.round(editorWidth)}
+                        aria-valuemin={MIN_EDITOR_WIDTH}
+                        aria-valuemax={MAX_EDITOR_WIDTH}
+                        tabIndex={0}
+                        onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
+                        onPointerMove={handleDividerMove}
+                        onKeyDown={handleDividerKeyDown}
+                    />
+                    <div className="split-panel split-panel-grow">
+                        {previewPane}
+                    </div>
+                </main>
+            )}
+        </div>
+    );
+}
+
+export default App;
