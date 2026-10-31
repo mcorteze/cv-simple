@@ -71,7 +71,7 @@ const EditorToolbar = ({ textareaRef }) => {
     ];
 
     return (
-        <div className="editor-toolbar">
+        <div className="editor-toolbar" data-guide="editor-tools">
             {tools.map(({ label, icon: Icon, run }) => (
                 <button
                     key={label}

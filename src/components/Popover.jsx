@@ -4,15 +4,16 @@ const PANEL_MAX_WIDTH = 420;
 const VIEWPORT_GUTTER = 16;
 
 // Panel con posición fija: los paneles de la app recortan lo que se sale de ellos.
-const Popover = ({ trigger, triggerClassName, title, children }) => {
+// children puede ser una función que recibe cómo cerrar el panel.
+const Popover = ({ trigger, triggerClassName, triggerProps, title, panelMaxWidth = PANEL_MAX_WIDTH, children }) => {
     const [position, setPosition] = useState(null);
     const rootRef = useRef(null);
     const isOpen = position !== null;
+    const close = () => setPosition(null);
 
     useEffect(() => {
         if (!isOpen) return undefined;
 
-        const close = () => setPosition(null);
         const handleMouseDown = (e) => {
             if (!rootRef.current.contains(e.target)) close();
         };
@@ -37,7 +38,7 @@ const Popover = ({ trigger, triggerClassName, title, children }) => {
         }
 
         const rect = e.currentTarget.getBoundingClientRect();
-        const width = Math.min(PANEL_MAX_WIDTH, window.innerWidth - 2 * VIEWPORT_GUTTER);
+        const width = Math.min(panelMaxWidth, window.innerWidth - 2 * VIEWPORT_GUTTER);
         setPosition({
             top: rect.bottom + 6,
             left: Math.max(VIEWPORT_GUTTER, Math.min(rect.left, window.innerWidth - width - VIEWPORT_GUTTER)),
@@ -47,13 +48,13 @@ const Popover = ({ trigger, triggerClassName, title, children }) => {
 
     return (
         <div className="popover" ref={rootRef}>
-            <button type="button" className={triggerClassName} aria-expanded={isOpen} onClick={toggle}>
+            <button type="button" className={triggerClassName} aria-expanded={isOpen} onClick={toggle} {...triggerProps}>
                 {trigger}
             </button>
             {isOpen && (
                 <div className="popover-panel" style={position}>
-                    <p className="popover-title">{title}</p>
-                    {children}
+                    {title && <p className="popover-title">{title}</p>}
+                    {typeof children === 'function' ? children(close) : children}
                 </div>
             )}
         </div>

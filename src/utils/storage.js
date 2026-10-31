@@ -21,3 +21,22 @@ export const saveDraft = (draft) => {
         return false;
     }
 };
+
+// Qué guías ya se vieron: una preferencia de este navegador
+const GUIDES_KEY = 'markdown-cv:guias-vistas-v1';
+
+export const loadViewedGuides = () => {
+    try {
+        return JSON.parse(localStorage.getItem(GUIDES_KEY)) || [];
+    } catch {
+        return [];
+    }
+};
+
+export const saveViewedGuides = (ids) => {
+    try {
+        localStorage.setItem(GUIDES_KEY, JSON.stringify(ids));
+    } catch {
+        // Sin almacenamiento: no se recuerda
+    }
+};

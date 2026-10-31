@@ -19,6 +19,7 @@ import {
 import ConfirmDialog from './components/ConfirmDialog';
 import CVPreview from './components/CVPreview';
 import EditorToolbar, { toggleBold } from './components/EditorToolbar';
+import GuideButton from './components/GuideButton';
 import Popover from './components/Popover';
 import { SAMPLE_CV } from './data/sampleCV';
 import { getCvFileName, downloadTxtFile } from './utils/exportUtils';
@@ -240,10 +241,10 @@ function App() {
     };
 
     const editorPane = (
-        <div className="pane">
+        <div className="pane" data-guide="editor">
             <div className="pane-header">
                 <span>Editor</span>
-                <span className="save-status">
+                <span className="save-status" data-guide="save-status">
                     {isSaved ? 'Guardado solo en este navegador' : 'No se pudo guardar en este navegador'}
                 </span>
             </div>
@@ -264,7 +265,7 @@ function App() {
     const previewPane = (
         <div className="pane">
             <div className="pane-header">
-                <div className="preview-summary">
+                <div className="preview-summary" data-guide="review">
                     <span>Vista previa · {pageCount} {pageCount === 1 ? 'página' : 'páginas'}</span>
                     <Popover
                         trigger={reviewIssues.length === 0
@@ -285,7 +286,7 @@ function App() {
                         )}
                     </Popover>
                 </div>
-                <div className="scale-controls">
+                <div className="scale-controls" data-guide="zoom">
                     <ZoomOut size={14} />
                     <input
                         type="range"
@@ -308,7 +309,7 @@ function App() {
                     </button>
                 </div>
             </div>
-            <div className="format-bar">
+            <div className="format-bar" data-guide="format">
                 {FORMAT_CONTROLS.map(({ key, label, options }) => (
                     <label className="format-control" key={key}>
                         <span>{label}</span>
@@ -329,6 +330,7 @@ function App() {
             <div className="preview-pane" ref={previewScrollRef}>
                 <div
                     className="cv-page-sizer"
+                    data-guide="page"
                     style={{ width: A4_WIDTH_PX * scale, height: pageHeight * scale }}
                 >
                     <div className="cv-page-wrapper" style={{ transform: `scale(${scale})` }}>
@@ -347,6 +349,15 @@ function App() {
                 </div>
             </div>
         </div>
+    );
+
+    const guideButton = (
+        <GuideButton
+            onShowPane={setMobileTab}
+            isSample={markdown === SAMPLE_CV}
+            onLoadSample={() => replaceMarkdown(SAMPLE_CV)}
+            onClearSample={() => replaceMarkdown('')}
+        />
     );
 
     return (
@@ -374,10 +385,13 @@ function App() {
             )}
 
             <header className="toolbar">
-                <div className="logo">
-                    <span>Markdown CV</span>
+                <div className="toolbar-brand">
+                    <div className="logo">
+                        <span>Markdown CV</span>
+                    </div>
+                    {isMobile && guideButton}
                 </div>
-                <div className="actions">
+                <div className="actions" data-guide="actions">
                     <button className="btn btn-secondary" onClick={() => replaceMarkdown('')}>
                         <FilePlus size={14} />
                         Nuevo
@@ -386,13 +400,13 @@ function App() {
                         <FileText size={14} />
                         Ejemplo
                     </button>
-                    <button className="btn btn-secondary" onClick={() => fileInputRef.current.click()}>
+                    <button className="btn btn-secondary" data-guide="import" onClick={() => fileInputRef.current.click()}>
                         <Upload size={14} />
                         Importar
                     </button>
                     <input type="file" ref={fileInputRef} hidden accept=".docx,.md,.txt" onChange={handleFileUpload} />
 
-                    <button className="btn btn-secondary" onClick={handleCopyText}>
+                    <button className="btn btn-secondary" data-guide="copy" onClick={handleCopyText}>
                         {isCopied ? <Check size={14} /> : <Copy size={14} />}
                         {isCopied ? 'Copiado' : 'Copiar texto'}
                     </button>
@@ -402,10 +416,11 @@ function App() {
                         Descargar .txt
                     </button>
 
-                    <button className="btn btn-primary" onClick={handlePrint}>
+                    <button className="btn btn-primary" data-guide="pdf" onClick={handlePrint}>
                         <FileDown size={14} />
                         Exportar PDF
                     </button>
+                    {!isMobile && guideButton}
                 </div>
             </header>
 
@@ -446,6 +461,7 @@ function App() {
                     </div>
                     <div
                         className="split-divider"
+                        data-guide="divider"
                         role="separator"
                         aria-orientation="vertical"
                         aria-label="Cambiar ancho del editor"
