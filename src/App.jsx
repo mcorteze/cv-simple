@@ -13,8 +13,7 @@ import {
     X,
     ZoomIn,
     ZoomOut,
-    Maximize,
-    Store
+    Maximize
 } from 'lucide-react';
 
 import ConfirmDialog from './components/ConfirmDialog';
@@ -406,10 +405,8 @@ function App() {
                             href={STORE_URL}
                             target="_blank"
                             rel="noopener noreferrer"
-                            title="Tienda Aló Asesorías Excel"
-                            aria-label="Tienda Aló Asesorías Excel"
                         >
-                            <Store size={16} />
+                            Aló Asesorías Excel
                         </a>
                     </div>
                     {isMobile && guideButton}

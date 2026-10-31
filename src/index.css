@@ -186,23 +186,74 @@ body {
     color: var(--text-muted);
 }
 
-.guide-table {
-    border-collapse: collapse;
-    font-size: 0.8rem;
+.confirm-dialog.syntax-dialog {
+    width: min(680px, calc(100vw - 2rem));
+    padding: 1.5rem;
 }
 
-.guide-table td {
-    padding: 0.25rem 0.75rem 0.25rem 0;
-    vertical-align: top;
+.syntax-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
 }
 
-.guide-table code {
+.syntax-dialog-header h2 {
+    margin-bottom: 0;
+}
+
+.syntax-list {
+    margin-top: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.syntax-row {
+    display: grid;
+    grid-template-columns: 17rem minmax(0, 1fr);
+    align-items: center;
+    gap: 1.25rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+}
+
+.syntax-row + .syntax-row {
+    border-top: 1px solid var(--border);
+}
+
+.syntax-row-head {
+    background: #fafafa;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.syntax-row code {
+    justify-self: start;
+    padding: 0.3rem 0.55rem;
+    border-radius: 6px;
+    background: #f4f4f5;
     font-family: var(--editor-font);
+    font-size: 0.85rem;
+    color: var(--text-main);
+    white-space: nowrap;
 }
 
-@media (min-width: 768px) {
-    .guide-table code {
-        white-space: nowrap;
+@media (max-width: 767px) {
+    .syntax-row {
+        grid-template-columns: 1fr;
+        gap: 0.4rem;
+    }
+
+    .syntax-row code {
+        white-space: normal;
+    }
+
+    .syntax-row-head {
+        display: none;
     }
 }
 
@@ -621,18 +672,15 @@ body {
 }
 
 .store-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text-main);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
 }
 
 .store-link:hover {
-    background: #f4f4f5;
+    color: var(--text-main);
+    text-decoration: underline;
 }
 
 .confirm-actions {
@@ -668,7 +716,7 @@ body {
 }
 
 /* Laptop angosta: los botones secundarios quedan solo con su ícono */
-@media (min-width: 768px) and (max-width: 959px) {
+@media (min-width: 768px) and (max-width: 1023px) {
     .actions .btn-secondary {
         padding-inline: 0.55rem;
     }

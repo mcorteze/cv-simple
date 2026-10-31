@@ -1,18 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Bold, Briefcase, Heading2, HelpCircle, List } from 'lucide-react';
 
-import Popover from './Popover';
-
-const GUIDE_PANEL_MAX_WIDTH = 580;
-
-const GUIDE_ROWS = [
-    ['# Tu nombre', 'Nombre, arriba y destacado'],
-    ['correo | teléfono | ciudad', 'Línea siguiente: datos de contacto'],
-    ['## EXPERIENCIA', 'Título de sección'],
-    ['### Cargo | 2020 - Presente', 'Cargo a la izquierda, fechas a la derecha'],
-    ['**Empresa**', 'Texto en negrita'],
-    ['- Una tarea o logro', 'Punto de una lista'],
-];
+import SyntaxGuideDialog from './SyntaxGuideDialog';
 
 // execCommand mantiene el deshacer del navegador y dispara el onChange del textarea.
 const insertText = (textarea, start, end, text, selectFrom, selectTo) => {
@@ -57,6 +46,7 @@ const toggleList = (textarea) => {
 };
 
 const EditorToolbar = ({ textareaRef }) => {
+    const [isGuideOpen, setIsGuideOpen] = useState(false);
     const tools = [
         {
             label: 'Sección',
@@ -87,24 +77,12 @@ const EditorToolbar = ({ textareaRef }) => {
                 </button>
             ))}
             <div className="editor-tool-guide">
-                <Popover
-                    trigger={<><HelpCircle size={14} />Guía</>}
-                    triggerClassName="editor-tool"
-                    title="Cómo escribir tu CV"
-                    panelMaxWidth={GUIDE_PANEL_MAX_WIDTH}
-                >
-                    <table className="guide-table">
-                        <tbody>
-                            {GUIDE_ROWS.map(([syntax, description]) => (
-                                <tr key={syntax}>
-                                    <td><code>{syntax}</code></td>
-                                    <td>{description}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </Popover>
+                <button type="button" className="editor-tool" onClick={() => setIsGuideOpen(true)}>
+                    <HelpCircle size={14} />
+                    Guía
+                </button>
             </div>
+            <SyntaxGuideDialog open={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
         </div>
     );
 };
