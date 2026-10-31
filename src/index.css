@@ -57,6 +57,7 @@ body {
     align-items: center;
     gap: 0.6rem;
     letter-spacing: -0.01em;
+    white-space: nowrap;
 }
 
 .actions {
@@ -75,6 +76,7 @@ body {
     transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid transparent;
     font-size: 0.8rem;
+    white-space: nowrap;
 }
 
 .btn-primary {
@@ -196,6 +198,12 @@ body {
 
 .guide-table code {
     font-family: var(--editor-font);
+}
+
+@media (min-width: 768px) {
+    .guide-table code {
+        white-space: nowrap;
+    }
 }
 
 /* Editor */
@@ -581,6 +589,29 @@ body {
     color: var(--text-muted);
 }
 
+.welcome-dialog {
+    width: min(480px, calc(100vw - 2rem));
+}
+
+.welcome-dialog p + p {
+    margin-top: 0.6rem;
+}
+
+.store-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-main);
+}
+
+.store-link:hover {
+    background: #f4f4f5;
+}
+
 .confirm-actions {
     display: flex;
     justify-content: flex-end;
@@ -611,6 +642,17 @@ body {
 .mobile-tabs button.is-active {
     background: white;
     color: var(--text-main);
+}
+
+/* Laptop angosta: los botones secundarios quedan solo con su ícono */
+@media (min-width: 768px) and (max-width: 959px) {
+    .actions .btn-secondary {
+        padding-inline: 0.55rem;
+    }
+
+    .actions .btn-secondary .btn-label {
+        display: none;
+    }
 }
 
 /* Móvil: editor y vista previa en pestañas */

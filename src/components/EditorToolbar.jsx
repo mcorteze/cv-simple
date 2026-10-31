@@ -3,6 +3,8 @@ import { Bold, Briefcase, Heading2, HelpCircle, List } from 'lucide-react';
 
 import Popover from './Popover';
 
+const GUIDE_PANEL_MAX_WIDTH = 580;
+
 const GUIDE_ROWS = [
     ['# Tu nombre', 'Nombre, arriba y destacado'],
     ['correo | teléfono | ciudad', 'Línea siguiente: datos de contacto'],
@@ -89,6 +91,7 @@ const EditorToolbar = ({ textareaRef }) => {
                     trigger={<><HelpCircle size={14} />Guía</>}
                     triggerClassName="editor-tool"
                     title="Cómo escribir tu CV"
+                    panelMaxWidth={GUIDE_PANEL_MAX_WIDTH}
                 >
                     <table className="guide-table">
                         <tbody>

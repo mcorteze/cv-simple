@@ -40,3 +40,21 @@ export const saveViewedGuides = (ids) => {
         // Sin almacenamiento: no se recuerda
     }
 };
+
+const WELCOME_KEY = 'markdown-cv:bienvenida-v1';
+
+export const loadWelcomeSeen = () => {
+    try {
+        return localStorage.getItem(WELCOME_KEY) === '1';
+    } catch {
+        return false;
+    }
+};
+
+export const saveWelcomeSeen = () => {
+    try {
+        localStorage.setItem(WELCOME_KEY, '1');
+    } catch {
+        // Sin almacenamiento: se volverá a mostrar
+    }
+};

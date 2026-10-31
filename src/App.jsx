@@ -13,7 +13,8 @@ import {
     X,
     ZoomIn,
     ZoomOut,
-    Maximize
+    Maximize,
+    Store
 } from 'lucide-react';
 
 import ConfirmDialog from './components/ConfirmDialog';
@@ -21,6 +22,7 @@ import CVPreview from './components/CVPreview';
 import EditorToolbar, { toggleBold } from './components/EditorToolbar';
 import GuideButton from './components/GuideButton';
 import Popover from './components/Popover';
+import WelcomeDialog from './components/WelcomeDialog';
 import { SAMPLE_CV } from './data/sampleCV';
 import { getCvFileName, downloadTxtFile } from './utils/exportUtils';
 import {
@@ -43,6 +45,7 @@ const MOBILE_QUERY = '(max-width: 767px)';
 const MIN_EDITOR_WIDTH = 20;
 const MAX_EDITOR_WIDTH = 80;
 const COPIED_FEEDBACK_MS = 2000;
+const STORE_URL = 'https://aloasesoriasexcel.cl';
 
 const EDITOR_PLACEHOLDER = `# Tu nombre
 correo | teléfono | ciudad
@@ -366,6 +369,8 @@ function App() {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}>
 
+            <WelcomeDialog />
+
             <ConfirmDialog
                 open={pendingReplace !== null}
                 title="¿Reemplazar el texto actual?"
@@ -388,32 +393,42 @@ function App() {
                 <div className="toolbar-brand">
                     <div className="logo">
                         <span>Markdown CV</span>
+                        <a
+                            className="store-link"
+                            href={STORE_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Tienda Aló Asesorías Excel"
+                            aria-label="Tienda Aló Asesorías Excel"
+                        >
+                            <Store size={16} />
+                        </a>
                     </div>
                     {isMobile && guideButton}
                 </div>
                 <div className="actions" data-guide="actions">
-                    <button className="btn btn-secondary" onClick={() => replaceMarkdown('')}>
+                    <button className="btn btn-secondary" title="Nuevo" onClick={() => replaceMarkdown('')}>
                         <FilePlus size={14} />
-                        Nuevo
+                        <span className="btn-label">Nuevo</span>
                     </button>
-                    <button className="btn btn-secondary" onClick={() => replaceMarkdown(SAMPLE_CV)}>
+                    <button className="btn btn-secondary" title="Ejemplo" onClick={() => replaceMarkdown(SAMPLE_CV)}>
                         <FileText size={14} />
-                        Ejemplo
+                        <span className="btn-label">Ejemplo</span>
                     </button>
-                    <button className="btn btn-secondary" data-guide="import" onClick={() => fileInputRef.current.click()}>
+                    <button className="btn btn-secondary" title="Importar" data-guide="import" onClick={() => fileInputRef.current.click()}>
                         <Upload size={14} />
-                        Importar
+                        <span className="btn-label">Importar</span>
                     </button>
                     <input type="file" ref={fileInputRef} hidden accept=".docx,.md,.txt" onChange={handleFileUpload} />
 
-                    <button className="btn btn-secondary" data-guide="copy" onClick={handleCopyText}>
+                    <button className="btn btn-secondary" title="Copiar texto" data-guide="copy" onClick={handleCopyText}>
                         {isCopied ? <Check size={14} /> : <Copy size={14} />}
-                        {isCopied ? 'Copiado' : 'Copiar texto'}
+                        <span className="btn-label">{isCopied ? 'Copiado' : 'Copiar texto'}</span>
                     </button>
 
-                    <button className="btn btn-secondary" onClick={() => downloadTxtFile(markdown)}>
+                    <button className="btn btn-secondary" title="Descargar .txt" onClick={() => downloadTxtFile(markdown)}>
                         <Download size={14} />
-                        Descargar .txt
+                        <span className="btn-label">Descargar .txt</span>
                     </button>
 
                     <button className="btn btn-primary" data-guide="pdf" onClick={handlePrint}>
