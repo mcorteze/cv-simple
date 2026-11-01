@@ -66,8 +66,7 @@ const actions = [
         type: 'action',
         title: 'Descargar el CV en PDF',
         steps: [
-            { zone: z('pdf'), title: '1. Presiona Exportar PDF', text: 'Se abre la ventana de impresión del navegador.' },
-            { zone: null, title: '2. Elige «Guardar como PDF»', text: 'En Destino o Impresora, elige «Guardar como PDF» y luego Guardar. El archivo se propone con tu nombre, por ejemplo CV_Ana_Perez.' },
+            { zone: z('pdf'), title: '1. Presiona Exportar PDF', text: 'El archivo se descarga con tu nombre, por ejemplo CV_Ana_Perez.pdf, y queda en la carpeta de descargas del equipo o del teléfono.' },
             { zone: z('copy'), title: 'Para un formulario: Copiar texto', text: 'Copia el CV sin marcas, listo para pegar en un portal de empleo.' },
         ],
     },

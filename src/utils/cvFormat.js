@@ -58,8 +58,3 @@ export const getPageVars = (format) => {
         '--cv-margin-y': `${margin.yMm}mm`,
     };
 };
-
-export const getPrintPageStyle = (format) => {
-    const margin = getMargin(format);
-    return `@page { size: A4; margin: ${margin.yMm}mm ${margin.xMm}mm; }`;
-};

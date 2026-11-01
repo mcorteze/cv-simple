@@ -16,7 +16,7 @@ Escribe tu currículum en texto simple y descárgalo en PDF. No necesitas crear 
 
 1. Presiona **Nuevo**, o reemplaza el CV de ejemplo con tus datos.
 2. Elige un diseño y revisa la cantidad de páginas.
-3. Presiona **Exportar PDF** y selecciona «Guardar como PDF» en la ventana de impresión.
+3. Presiona **Exportar PDF**: el archivo se descarga directamente, también desde el teléfono.
 
 ## Cómo se escribe
 

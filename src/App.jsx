@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useReactToPrint } from 'react-to-print';
 import {
+    Loader2,
     Check,
     ClipboardCheck,
     Copy,
@@ -23,7 +23,7 @@ import GuideButton from './components/GuideButton';
 import Popover from './components/Popover';
 import WelcomeDialog from './components/WelcomeDialog';
 import { SAMPLE_CV } from './data/sampleCV';
-import { getCvFileName, downloadTxtFile } from './utils/exportUtils';
+import { downloadTxtFile } from './utils/exportUtils';
 import {
     TEMPLATES,
     FONT_SIZES,
@@ -31,7 +31,6 @@ import {
     SPACINGS,
     getMargin,
     getPageVars,
-    getPrintPageStyle,
     normalizeFormat
 } from './utils/cvFormat';
 import { computePageBreaks } from './utils/pagination';
@@ -90,6 +89,7 @@ function App() {
     const [pendingReplace, setPendingReplace] = useState(null);
     const [notice, setNotice] = useState('');
     const [isCopied, setIsCopied] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [isWelcomeOpen, setIsWelcomeOpen] = useState(() => !loadWelcomeSeen());
 
     const isMobile = useIsMobile();
@@ -142,11 +142,19 @@ function App() {
         return () => observer.disconnect();
     }, [markdown, format, isMobile]);
 
-    const handlePrint = useReactToPrint({
-        content: () => componentRef.current,
-        documentTitle: getCvFileName(markdown),
-        pageStyle: getPrintPageStyle(format),
-    });
+    const handleExportPdf = async () => {
+        setIsExporting(true);
+        try {
+            // Se carga al exportar: el generador de PDF pesa más que el resto de la app
+            const { downloadCvPdf } = await import('./utils/exportPdf');
+            await downloadCvPdf(markdown, format);
+        } catch (error) {
+            console.error("Error al generar el PDF:", error);
+            setNotice('No se pudo generar el PDF. Vuelve a intentarlo en unos segundos.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     const pageCount = pageBreaks.length + 1;
     const reviewIssues = useMemo(() => reviewCV(markdown, pageCount), [markdown, pageCount]);
@@ -343,7 +351,7 @@ function App() {
                             template={format.template}
                             pageVars={getPageVars(format)}
                         />
-                        {pageBreaks.map((top, index) => (
+                        {pageBreaks.map(({ top }, index) => (
                             <div className="page-break-marker" key={top} style={{ top }}>
                                 <span>Página {index + 2}</span>
                             </div>
@@ -436,9 +444,9 @@ function App() {
                         <span className="btn-label">Descargar .txt</span>
                     </button>
 
-                    <button className="btn btn-primary" data-guide="pdf" onClick={handlePrint}>
-                        <FileDown size={14} />
-                        Exportar PDF
+                    <button className="btn btn-primary" data-guide="pdf" onClick={handleExportPdf} disabled={isExporting}>
+                        {isExporting ? <Loader2 size={14} className="spin" /> : <FileDown size={14} />}
+                        {isExporting ? 'Generando…' : 'Exportar PDF'}
                     </button>
                     {!isMobile && guideButton}
                 </div>
