@@ -53,6 +53,7 @@ const APP_VERSION_LABEL = `v${__APP_VERSION__} · ${new Intl.DateTimeFormat('es-
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    hourCycle: 'h23',
 }).format(new Date(__BUILD_ID__))}`;
 
 const EDITOR_PLACEHOLDER = `# Tu nombre
