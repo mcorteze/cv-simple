@@ -6,7 +6,9 @@
 //   pane: en celular, la pestaña que se abre antes del paso ('editor' o 'preview').
 // Las guías solo muestran: nunca cambian el texto del CV.
 
-const z = (name) => `[data-guide="${name}"]`;
+// ~= permite que un elemento sea zona de varias guías: en el teléfono, el menú Archivo
+// contiene Importar y Copiar texto
+const z = (name) => `[data-guide~="${name}"]`;
 
 export const GUIDE_GROUPS = { screen: 'Conocer esta pantalla', action: 'Cómo hago…' };
 

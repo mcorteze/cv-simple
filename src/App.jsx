@@ -1,5 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
+    ChevronDown,
+    FolderOpen,
     Loader2,
     Check,
     ClipboardCheck,
@@ -44,6 +46,11 @@ const MIN_EDITOR_WIDTH = 20;
 const MAX_EDITOR_WIDTH = 80;
 const COPIED_FEEDBACK_MS = 2000;
 const STORE_URL = 'https://aloasesoriasexcel.cl';
+const FILE_MENU_MAX_WIDTH = 260;
+const FILE_MENU_GROUPS = [
+    { title: 'Empezar', keys: ['new', 'sample', 'import'] },
+    { title: 'Llevar el texto a otro lugar', keys: ['copy', 'txt'] },
+];
 
 // Versión y hora de publicación, en hora de Chile: así se sabe si llegó el último cambio
 const APP_VERSION_LABEL = `v${__APP_VERSION__} · ${new Intl.DateTimeFormat('es-CL', {
@@ -262,6 +269,14 @@ function App() {
         if (e.key === 'ArrowRight') resizeEditor(editorWidth + 2);
     };
 
+    const fileActions = {
+        new: { label: 'Nuevo', Icon: FilePlus, run: () => replaceMarkdown('') },
+        sample: { label: 'Ejemplo', Icon: FileText, run: () => replaceMarkdown(SAMPLE_CV) },
+        import: { label: 'Importar', Icon: Upload, run: () => fileInputRef.current.click() },
+        copy: { label: 'Copiar texto', Icon: Copy, run: handleCopyText },
+        txt: { label: 'Descargar .txt', Icon: Download, run: () => downloadTxtFile(markdown) },
+    };
+
     const editorPane = (
         <div className="pane" data-guide="editor">
             <div className="pane-header">
@@ -419,42 +434,64 @@ function App() {
                 <div className="toolbar-brand">
                     <div className="logo">
                         <span>Markdown CV</span>
-                        <span className="app-version">{APP_VERSION_LABEL}</span>
-                        <a
-                            className="store-link"
-                            href={STORE_URL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Aló Asesorías Excel
-                        </a>
+                        <span className="brand-meta">
+                            <a
+                                className="store-link"
+                                href={STORE_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Aló Asesorías Excel
+                            </a>
+                            <span className="app-version">{APP_VERSION_LABEL}</span>
+                        </span>
                     </div>
                     {isMobile && guideButton}
                 </div>
                 <div className="actions" data-guide="actions">
-                    <button className="btn btn-secondary" title="Nuevo" onClick={() => replaceMarkdown('')}>
-                        <FilePlus size={14} />
-                        <span className="btn-label">Nuevo</span>
-                    </button>
-                    <button className="btn btn-secondary" title="Ejemplo" onClick={() => replaceMarkdown(SAMPLE_CV)}>
-                        <FileText size={14} />
-                        <span className="btn-label">Ejemplo</span>
-                    </button>
-                    <button className="btn btn-secondary" title="Importar" data-guide="import" onClick={() => fileInputRef.current.click()}>
-                        <Upload size={14} />
-                        <span className="btn-label">Importar</span>
-                    </button>
                     <input type="file" ref={fileInputRef} hidden accept=".docx,.md,.txt" onChange={handleFileUpload} />
-
-                    <button className="btn btn-secondary" title="Copiar texto" data-guide="copy" onClick={handleCopyText}>
-                        {isCopied ? <Check size={14} /> : <Copy size={14} />}
-                        <span className="btn-label">{isCopied ? 'Copiado' : 'Copiar texto'}</span>
-                    </button>
-
-                    <button className="btn btn-secondary" title="Descargar .txt" onClick={() => downloadTxtFile(markdown)}>
-                        <Download size={14} />
-                        <span className="btn-label">Descargar .txt</span>
-                    </button>
+                    {isMobile ? (
+                        // En el teléfono las acciones de archivo van en un menú: la barra queda con dos botones
+                        <Popover
+                            trigger={<>
+                                {isCopied ? <Check size={14} /> : <FolderOpen size={14} />}
+                                {isCopied ? 'Copiado' : 'Archivo'}
+                                <ChevronDown size={14} />
+                            </>}
+                            triggerClassName="btn btn-secondary file-menu-trigger"
+                            triggerProps={{ 'data-guide': 'import copy' }}
+                            panelMaxWidth={FILE_MENU_MAX_WIDTH}
+                        >
+                            {(close) => (
+                                <div className="guide-menu">
+                                    {FILE_MENU_GROUPS.map(({ title, keys }) => (
+                                        <React.Fragment key={title}>
+                                            <p className="guide-menu-group">{title}</p>
+                                            {keys.map((key) => {
+                                                const { label, Icon, run } = fileActions[key];
+                                                return (
+                                                    <button
+                                                        key={key}
+                                                        type="button"
+                                                        className="guide-menu-item"
+                                                        onClick={() => { close(); run(); }}
+                                                    >
+                                                        <Icon size={14} />
+                                                        <span>{label}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                            )}
+                        </Popover>
+                    ) : Object.entries(fileActions).map(([key, { label, Icon, run }]) => (
+                        <button key={key} className="btn btn-secondary" title={label} data-guide={key} onClick={run}>
+                            {key === 'copy' && isCopied ? <Check size={14} /> : <Icon size={14} />}
+                            <span className="btn-label">{key === 'copy' && isCopied ? 'Copiado' : label}</span>
+                        </button>
+                    ))}
 
                     <button className="btn btn-primary" data-guide="pdf" onClick={handleExportPdf} disabled={isExporting}>
                         {isExporting ? <Loader2 size={14} className="spin" /> : <FileDown size={14} />}

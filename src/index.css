@@ -699,6 +699,12 @@ body {
     text-decoration: none;
 }
 
+.brand-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+
 .app-version {
     color: var(--text-muted);
     font-size: 0.7rem;
@@ -786,9 +792,29 @@ body {
         padding: 0.6rem 1rem;
     }
 
+    /* Nombre arriba; tienda y versión debajo, en una línea pequeña */
+    .logo {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.1rem;
+        min-width: 0;
+    }
+
+    .brand-meta {
+        flex-wrap: wrap;
+        column-gap: 0.5rem;
+        row-gap: 0;
+        white-space: normal;
+    }
+
     .actions {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .actions .popover,
+    .file-menu-trigger {
+        width: 100%;
     }
 
     .actions .btn {
