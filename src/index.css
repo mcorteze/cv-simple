@@ -699,6 +699,12 @@ body {
     text-decoration: none;
 }
 
+.app-version {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 400;
+}
+
 .store-link:hover {
     color: var(--text-main);
     text-decoration: underline;

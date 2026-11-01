@@ -45,6 +45,16 @@ const MAX_EDITOR_WIDTH = 80;
 const COPIED_FEEDBACK_MS = 2000;
 const STORE_URL = 'https://aloasesoriasexcel.cl';
 
+// Versión y hora de publicación, en hora de Chile: así se sabe si llegó el último cambio
+const APP_VERSION_LABEL = `v${__APP_VERSION__} · ${new Intl.DateTimeFormat('es-CL', {
+    timeZone: 'America/Santiago',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+}).format(new Date(__BUILD_ID__))}`;
+
 const EDITOR_PLACEHOLDER = `# Tu nombre
 correo | teléfono | ciudad
 
@@ -408,6 +418,7 @@ function App() {
                 <div className="toolbar-brand">
                     <div className="logo">
                         <span>Markdown CV</span>
+                        <span className="app-version">{APP_VERSION_LABEL}</span>
                         <a
                             className="store-link"
                             href={STORE_URL}
